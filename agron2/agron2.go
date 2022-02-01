@@ -61,40 +61,23 @@ var (
 
 const (
 	Argon2Ok = iota
-	Argon2OutputPtrNull
-	Argon2OutputTooShort
-	Argon2OutputTooLong
 	Argon2PwdTooShort
 	Argon2PwdTooLong
 	Argon2SaltTooShort
 	Argon2SaltTooLong
-	Argon2AdTooShort
-	Argon2AdTooLong
 	Argon2SecretTooShort
 	Argon2SecretTooLong
 	Argon2TimeTooSmall
 	Argon2TimeTooLarge
 	Argon2MemoryTooLittle
 	Argon2MemoryTooMuch
-	Argon2LanesTooFew
-	Argon2LanesTooMany
 	Argon2PwdPtrMismatch
 	Argon2SaltPtrMismatch
 	Argon2SecretPtrMismatch
-	Argon2AdPtrMismatch
-	Argon2MemoryAllocationError
-	Argon2FreeMemoryCbkNull
-	Argon2AllocateMemoryCbkNull
-	Argon2IncorrectParameter
 	Argon2IncorrectType
-	Argon2OutPtrMismatch
 	Argon2ThreadsTooFew
 	Argon2ThreadsTooMany
-	Argon2MissingArgs
-	Argon2EncodingFail
 	Argon2DecodingFail
-	Argon2ThreadFail
-	Argon2DecodingLengthFail
 	Argon2VerifyMismatch
 )
 
@@ -102,12 +85,6 @@ func Argon2ErrorMessage(errorCode int) string {
 	switch errorCode {
 	case Argon2Ok:
 		return "OK"
-	case Argon2OutputPtrNull:
-		return "Output pointer is NULL"
-	case Argon2OutputTooShort:
-		return "Output is too short"
-	case Argon2OutputTooLong:
-		return "Output is too long"
 	case Argon2PwdTooShort:
 		return "Password is too short"
 	case Argon2PwdTooLong:
@@ -116,10 +93,6 @@ func Argon2ErrorMessage(errorCode int) string {
 		return "Salt is too short"
 	case Argon2SaltTooLong:
 		return "Salt is too long"
-	case Argon2AdTooShort:
-		return "Associated data is too short"
-	case Argon2AdTooLong:
-		return "Associated data is too long"
 	case Argon2SecretTooShort:
 		return "Secret is too short"
 	case Argon2SecretTooLong:
@@ -132,44 +105,20 @@ func Argon2ErrorMessage(errorCode int) string {
 		return "Memory cost is too small"
 	case Argon2MemoryTooMuch:
 		return "Memory cost is too large"
-	case Argon2LanesTooFew:
-		return "Too few lanes"
-	case Argon2LanesTooMany:
-		return "Too many lanes"
 	case Argon2PwdPtrMismatch:
 		return "Password pointer is NULL, but password length is not 0"
 	case Argon2SaltPtrMismatch:
 		return "Salt pointer is NULL, but salt length is not 0"
 	case Argon2SecretPtrMismatch:
 		return "Secret pointer is NULL, but secret length is not 0"
-	case Argon2AdPtrMismatch:
-		return "Associated data pointer is NULL, but ad length is not 0"
-	case Argon2MemoryAllocationError:
-		return "Memory allocation error"
-	case Argon2FreeMemoryCbkNull:
-		return "The free memory callback is NULL"
-	case Argon2AllocateMemoryCbkNull:
-		return "The allocate memory callback is NULL"
-	case Argon2IncorrectParameter:
-		return "Argon2_Context context is NULL"
 	case Argon2IncorrectType:
 		return "There is no such version of Argon2"
-	case Argon2OutPtrMismatch:
-		return "Output pointer mismatch"
 	case Argon2ThreadsTooFew:
 		return "Not enough threads"
 	case Argon2ThreadsTooMany:
 		return "Too many threads"
-	case Argon2MissingArgs:
-		return "Missing arguments"
-	case Argon2EncodingFail:
-		return "Encoding failed"
 	case Argon2DecodingFail:
 		return "Decoding failed"
-	case Argon2ThreadFail:
-		return "Threading failure"
-	case Argon2DecodingLengthFail:
-		return "Some of encoded parameters are too long or too short"
 	case Argon2VerifyMismatch:
 		return "The password does not match the supplied hash"
 	default:
@@ -329,22 +278,22 @@ func DecodeString(context Argon2Context, encoded string, types Argon2Type) (Argo
 	var version int
 	_, err := fmt.Sscanf(vals[2], "v=%d", &version)
 	if err != nil {
-		return Argon2Context{}, "", errors.New("ve")
+		return Argon2Context{}, "", errors.New("something wrong in argon 2 version")
 	}
 	if version != argon2.Version {
-		return Argon2Context{}, "", errors.New("ver")
+		return Argon2Context{}, "", errors.New("something wrong in argon 2 version")
 	}
 
 	_, err = fmt.Sscanf(vals[3], "m=%d,t=%d,p=%d", &context.Mcost, &context.Tcost, &context.Threads)
 	if err != nil {
-		return Argon2Context{}, "", errors.New("scn")
+		return Argon2Context{}, "", errors.New("something wrong in argon 2 memory, time, and threads")
 	}
 
 	var sb strings.Builder
 
 	salt, err := hex.DecodeString(vals[4])
 	if err != nil {
-		return Argon2Context{}, "", errors.New("dcs")
+		return Argon2Context{}, "", errors.New("something wrong in argon 2 salt")
 	}
 
 	sb.Write(salt)
@@ -353,7 +302,7 @@ func DecodeString(context Argon2Context, encoded string, types Argon2Type) (Argo
 
 	secret, err := hex.DecodeString(vals[5])
 	if err != nil {
-		return Argon2Context{}, "", errors.New("dch")
+		return Argon2Context{}, "", errors.New("something wrong in argon 2 secret")
 	}
 	sb.Write(secret)
 	ret := sb.String()

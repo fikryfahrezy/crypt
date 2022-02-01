@@ -112,6 +112,108 @@ func TestVectors(t *testing.T) {
 	}
 }
 
+var testVectorsPwSalt = []struct {
+	mode                 agron2.Argon2Type
+	time, memory, keyLen uint32
+	threads              uint8
+	password, salt       string
+}{
+	{
+		mode: agron2.Argon2I, time: 1, memory: 64, threads: 1, keyLen: 32,
+		password: "password",
+		salt:     "somesalt",
+	},
+	{
+		mode: agron2.Argon2Id, time: 1, memory: 64, threads: 1, keyLen: 32,
+		password: "password",
+		salt:     "somesalt",
+	},
+	{
+		mode: agron2.Argon2I, time: 2, memory: 64, threads: 1, keyLen: 32,
+		password: "password",
+		salt:     "somesalt",
+	},
+	{
+		mode: agron2.Argon2Id, time: 2, memory: 64, threads: 1, keyLen: 32,
+		password: "password",
+		salt:     "somesalt",
+	},
+	{
+		mode: agron2.Argon2I, time: 2, memory: 64, threads: 2, keyLen: 32,
+		password: "password",
+		salt:     "somesalt",
+	},
+	{
+		mode: agron2.Argon2Id, time: 2, memory: 64, threads: 2, keyLen: 32,
+		password: "password",
+		salt:     "somesalt",
+	},
+	{
+		mode: agron2.Argon2I, time: 3, memory: 256, threads: 2, keyLen: 32,
+		password: "password",
+		salt:     "somesalt",
+	},
+	{
+		mode: agron2.Argon2Id, time: 3, memory: 256, threads: 2, keyLen: 32,
+		password: "password",
+		salt:     "somesalt",
+	},
+	{
+		mode: agron2.Argon2I, time: 4, memory: 4096, threads: 4, keyLen: 32,
+		password: "password",
+		salt:     "somesalt",
+	},
+	{
+		mode: agron2.Argon2Id, time: 4, memory: 4096, threads: 4, keyLen: 32,
+		password: "password",
+		salt:     "somesalt",
+	},
+	{
+		mode: agron2.Argon2I, time: 4, memory: 1024, threads: 8, keyLen: 32,
+		password: "password",
+		salt:     "somesalt",
+	},
+	{
+		mode: agron2.Argon2Id, time: 4, memory: 1024, threads: 8, keyLen: 32,
+		password: "password",
+		salt:     "somesalt",
+	},
+	{
+		mode: agron2.Argon2I, time: 2, memory: 64, threads: 3, keyLen: 32,
+		password: "password",
+		salt:     "somesalt",
+	},
+	{
+		mode: agron2.Argon2Id, time: 2, memory: 64, threads: 3, keyLen: 32,
+		password: "password",
+		salt:     "somesalt",
+	},
+	{
+		mode: agron2.Argon2I, time: 3, memory: 1024, threads: 6, keyLen: 32,
+		password: "password",
+		salt:     "somesalt",
+	},
+	{
+		mode: agron2.Argon2Id, time: 3, memory: 1024, threads: 6, keyLen: 32,
+		password: "password",
+		salt:     "somesalt",
+	},
+}
+
+func TestVectorsPwSalt(t *testing.T) {
+	for i, v := range testVectorsPwSalt {
+		hash, err := agron2.Argon2Hash(v.password, v.salt, v.time, v.memory, v.threads, v.keyLen, argon2.Version, v.mode)
+		if err != nil {
+			t.Fatalf("Test %d: failed to get argon context: %v", i, err)
+		}
+
+		err = agron2.Argon2Verify(hash, v.password, v.mode)
+		if err != nil {
+			t.Errorf("Test %d - error: %v", i, err)
+		}
+	}
+}
+
 func benchmarkArgon2(mode agron2.Argon2Type, time, memory uint32, threads uint8, keyLen uint32, b *testing.B) {
 	password := "password"
 	salt := "choosing random salts is hard"
@@ -149,7 +251,7 @@ func BenchmarkArgon2id(b *testing.B) {
 	b.Run(" Time: 5, Memory: 64 MB, Threads: 4", func(b *testing.B) { benchmarkArgon2(agron2.Argon2Id, 5, 64*1024, 4, 32, b) })
 }
 
-func benchmarkArgon2Verify(mode agron2.Argon2Type, time, memory uint32, threads uint8, keyLen uint32, b *testing.B) {
+func benchmarkArgon2VerifyCtx(mode agron2.Argon2Type, time, memory uint32, threads uint8, keyLen uint32, b *testing.B) {
 	password := "password"
 	salt := "choosing random salts is hard"
 	ctx := agron2.Argon2Context{
@@ -170,6 +272,39 @@ func benchmarkArgon2Verify(mode agron2.Argon2Type, time, memory uint32, threads 
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		agron2.Argon2VerifyCtx(ctx, hash, mode)
+	}
+}
+
+func BenchmarkArgon2iVerifyCtx(b *testing.B) {
+	b.Run(" Time: 3 Memory: 32 MB, Threads: 1", func(b *testing.B) { benchmarkArgon2VerifyCtx(agron2.Argon2I, 3, 32*1024, 1, 32, b) })
+	b.Run(" Time: 4 Memory: 32 MB, Threads: 1", func(b *testing.B) { benchmarkArgon2VerifyCtx(agron2.Argon2I, 4, 32*1024, 1, 32, b) })
+	b.Run(" Time: 5 Memory: 32 MB, Threads: 1", func(b *testing.B) { benchmarkArgon2VerifyCtx(agron2.Argon2I, 5, 32*1024, 1, 32, b) })
+	b.Run(" Time: 3 Memory: 64 MB, Threads: 4", func(b *testing.B) { benchmarkArgon2VerifyCtx(agron2.Argon2I, 3, 64*1024, 4, 32, b) })
+	b.Run(" Time: 4 Memory: 64 MB, Threads: 4", func(b *testing.B) { benchmarkArgon2VerifyCtx(agron2.Argon2I, 4, 64*1024, 4, 32, b) })
+	b.Run(" Time: 5 Memory: 64 MB, Threads: 4", func(b *testing.B) { benchmarkArgon2VerifyCtx(agron2.Argon2I, 5, 64*1024, 4, 32, b) })
+}
+
+func BenchmarkArgon2idVerifyCtx(b *testing.B) {
+	b.Run(" Time: 3, Memory: 32 MB, Threads: 1", func(b *testing.B) { benchmarkArgon2VerifyCtx(agron2.Argon2Id, 3, 32*1024, 1, 32, b) })
+	b.Run(" Time: 4, Memory: 32 MB, Threads: 1", func(b *testing.B) { benchmarkArgon2VerifyCtx(agron2.Argon2Id, 4, 32*1024, 1, 32, b) })
+	b.Run(" Time: 5, Memory: 32 MB, Threads: 1", func(b *testing.B) { benchmarkArgon2VerifyCtx(agron2.Argon2Id, 5, 32*1024, 1, 32, b) })
+	b.Run(" Time: 3, Memory: 64 MB, Threads: 4", func(b *testing.B) { benchmarkArgon2VerifyCtx(agron2.Argon2Id, 3, 64*1024, 4, 32, b) })
+	b.Run(" Time: 4, Memory: 64 MB, Threads: 4", func(b *testing.B) { benchmarkArgon2VerifyCtx(agron2.Argon2Id, 4, 64*1024, 4, 32, b) })
+	b.Run(" Time: 5, Memory: 64 MB, Threads: 4", func(b *testing.B) { benchmarkArgon2VerifyCtx(agron2.Argon2Id, 5, 64*1024, 4, 32, b) })
+}
+
+func benchmarkArgon2Verify(mode agron2.Argon2Type, time, memory uint32, threads uint8, keyLen uint32, b *testing.B) {
+	password := "password"
+	salt := "choosing random salts is hard"
+	hash, err := agron2.Argon2Hash(password, salt, time, memory, threads, keyLen, argon2.Version, mode)
+	if err != nil {
+		panic(fmt.Sprintf("Test failed to get argon context: %v", err))
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		agron2.Argon2Verify(hash, password, mode)
 	}
 }
 
